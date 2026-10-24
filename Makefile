@@ -24,7 +24,7 @@ compile:
 	@$(PY) -m py_compile $(MODULES) && echo "py_compile: ok ($(words $(MODULES)) modules)"
 
 test:
-	@$(PY) -m unittest -q tests.test_armm tests.test_signals tests.test_autopilot tests.test_starvation
+	@$(PY) -m unittest -q tests.test_armm tests.test_signals tests.test_autopilot tests.test_starvation tests.test_demo
 
 # Invariant 5: secrets only in ~/armm/.env — never in this repo, never in git.
 secrets:

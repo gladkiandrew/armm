@@ -1,0 +1,7 @@
+[project]
+name = "armm"
+version = "0.5.0"
+description = "Risk-first execution engine for crypto futures: deterministic guards, demo-locked autopilot, offline tests."
+requires-python = ">=3.10"
+authors = [{ name = "Andrew Gladki" }]
+license = { text = "MIT" }

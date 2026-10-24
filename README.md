@@ -21,7 +21,7 @@ design, the rules and every acceptance test are mine.
 | Venue | WEEX USDT-margined perpetuals (native REST client) |
 | State | SQLite state machine |
 | Interface | CLI + Telegram cockpit (chat-id lockdown) |
-| Tests | 276 offline unit tests, no network, no keys |
+| Tests | 281 offline unit tests, no network, no keys |
 | Safety | invariants proven by `make check` on every push (AST + runtime) |
 | Runs on | a self-managed Linux VPS under systemd |
 
@@ -70,7 +70,7 @@ the AST on every push. Everything in the strategy layer is pure computation.
 | Check | What it proves |
 |---|---|
 | `self-check` | every prerequisite of `check` has a real recipe, so a green run can't be vacuous |
-| `compile` + `test` | every module compiles; 276 offline unit tests pass in an isolated temp home |
+| `compile` + `test` | every module compiles; 281 offline unit tests pass in an isolated temp home |
 | `secrets` | no env file is tracked and no credential value appears anywhere in the tree |
 | `no-new-order-paths` | from the AST: only `ladder.py` and `manager.py` call an order function; the live endpoint constant is unchanged |
 | `demo-lock` | autopilot never names the live path, builds clients only with a literal `demo=True`, takes no live/force parameter, and at runtime refuses six kinds of live-ish client |
@@ -79,10 +79,37 @@ the AST on every push. Everything in the strategy layer is pure computation.
 
 ```bash
 git clone https://github.com/gladkiandrew/armm && cd armm
+python3 -m armm.demo                           # risk gate + a full backtest, under 1 second
 make compile test secrets no-new-order-paths   # offline checks, no keys needed
 # `make check` adds the runtime demo-lock proof, which needs demo API credentials
 python3 -m armm.ladder BTCUSDT LONG --entry 78200 --stop 77400 --targets 78600,79000,79400 --notional 500 --dry-run
 ```
+
+`armm.demo` runs the real risk gate on six proposed entries, then backtests Setup B
+over a year of **synthetic** candles (a seeded random walk, not market data) with the
+same signal path, trade simulator and statistics `research.py` uses:
+
+```
+1) RISK GATE — every entry path calls this before an order leaves the process
+   clean long         ALLOW
+   oversized          REFUSE  notional $5000 > cap $2500
+   too much leverage  REFUSE  leverage 20x > cap 5x
+   no stop            REFUSE  no stop price — stops are mandatory, placed atomically with entry
+   chasing the move   REFUSE  chase guard: entry 2.6% above reference (max 2.0%)
+   revenge trade      REFUSE  cooldown: BTCUSDT locked for 26 more min (anti-revenge rule)
+
+2) SETUP B BACKTEST — synthetic data, real decision code
+   trades        136
+   win rate      28.7%
+   expectancy    +0.073 R per trade (± 0.172 SE)
+   profit factor 1.09
+
+3) IS IT REAL?
+   |expectancy| 0.073 R is inside 2 SE (0.344 R): indistinguishable from noise. Don't trade it, don't tune it.
+```
+
+That last line is the point: a positive number is not an edge until it clears the
+noise band, and the same check is built into the real research reports.
 
 Credentials, if you ever run it against an exchange, live only in `~/armm/.env`
 (chmod 600). Nothing secret is in this repo.
@@ -111,7 +138,8 @@ armm/
   config.py         paths + the only reader/writer of ~/armm/.env
   logsetup.py       rotating ~/armm/bot.log with secret redaction
   demo_lock_check.py  runtime half of acceptance test 1
-tests/              276 offline unit tests (test_armm, test_signals, test_autopilot, test_starvation)
+  demo.py           offline demo: risk gate + synthetic-data backtest, no keys
+tests/              281 offline unit tests (test_armm, test_signals, test_autopilot, test_starvation, test_demo)
 deploy/             armm-bot.service — hardened systemd template, installed manually
 docs/BUILD_LOG.md   lessons, release by release
 ```
@@ -171,7 +199,7 @@ refused and logged from then on.
 ## Ops
 
 ```bash
-make check                # self-check, compile, 276 tests, secret scan, order-path + demo-lock proofs
+make check                # self-check, compile, 281 tests, secret scan, order-path + demo-lock proofs
 make install-service      # prints the manual systemd install steps
 tail -f ~/armm/bot.log    # rotating, 5MB x 5
 ```
