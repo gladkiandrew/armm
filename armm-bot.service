@@ -1,0 +1,43 @@
+# ARMM position manager + Telegram cockpit.
+# Template — installed MANUALLY (see `make install-service`), never automatically.
+#   sudo cp armm-bot.service /etc/systemd/system/armm-bot.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now armm-bot
+#
+# DEMO by default: there is no --live in ExecStart, and adding one is a
+# deliberate, reviewed edit. --allow-live-orders is likewise absent, so the
+# Telegram cockpit cannot place a live order on this unit.
+[Unit]
+Description=ARMM bot — position manager + Telegram cockpit (DEMO)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/armm
+EnvironmentFile=/home/ubuntu/armm/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/armm/manager.py --symbols BTCUSDT --telegram
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Logs: the bot writes its own rotating ~/armm/bot.log; journald gets a copy.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=armm-bot
+
+# Hardening — the bot only ever needs the repo and ~/armm.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/armm
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

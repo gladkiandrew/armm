@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# Runtime state and secrets live in ~/armm, never in the vault — belt and braces.
+*.env
+.env
+armm.db
+specs.json
+bot.log*
