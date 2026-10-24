@@ -1,10 +1,6 @@
 # ARMM bot — offline checks only. Nothing here touches the network or places an order.
 PY ?= python3
-MODULES := config.py logsetup.py specs.py weex_client.py guards.py ladder.py \
-           store.py notify.py manager.py tg.py test_armm.py \
-           indicators.py candles.py signals.py advisor.py research.py test_signals.py \
-           origin.py autopilot.py scoreboard.py test_autopilot.py demo_lock_check.py \
-           starvation.py test_starvation.py
+MODULES := $(wildcard armm/*.py) $(wildcard tests/*.py)
 
 # Every target here is phony. NOTE: a target listed here but MISSING a rule is
 # silently treated as "already made" — that is how a botched edit once left
@@ -28,7 +24,7 @@ compile:
 	@$(PY) -m py_compile $(MODULES) && echo "py_compile: ok ($(words $(MODULES)) modules)"
 
 test:
-	@$(PY) -m unittest -q test_armm test_signals test_autopilot test_starvation
+	@$(PY) -m unittest -q tests.test_armm tests.test_signals tests.test_autopilot tests.test_starvation
 
 # Invariant 5: secrets only in ~/armm/.env — never in this repo, never in git.
 secrets:
@@ -51,14 +47,14 @@ secrets:
 no-new-order-paths:
 	@$(PY) -c "import ast,sys,glob; \
 	ORDER={'place_order','place_tp_sl'}; \
-	ALLOWED={'ladder.py','manager.py'}; \
-	callers={f for f in glob.glob('*.py') \
+	ALLOWED={'armm/ladder.py','armm/manager.py'}; \
+	callers={f for f in glob.glob('armm/*.py') \
 	  for n in ast.walk(ast.parse(open(f).read(),f)) \
 	  if isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr in ORDER}; \
 	extra=callers-ALLOWED; \
 	sys.exit('FAIL: new order-placement path in '+', '.join(sorted(extra))) if extra else \
 	print('order paths: only '+', '.join(sorted(callers))+' can place (unchanged from v0.2)')"
-	@n=$$(grep -c 'LIVE_ORDER_PATH = \"/capi/v3/order\"' weex_client.py); \
+	@n=$$(grep -c 'LIVE_ORDER_PATH = \"/capi/v3/order\"' armm/weex_client.py); \
 	if [ "$$n" != "1" ]; then echo "FAIL: live order path constant changed"; exit 1; fi
 
 # v0.4 ACCEPTANCE TEST 1 — autopilot is demo-locked by construction.
@@ -67,10 +63,10 @@ no-new-order-paths:
 #   2. every WeexClient autopilot builds passes the LITERAL True for demo=
 #   3. no function in autopilot.py takes a live/force-style parameter
 demo-lock:
-	@if grep -qE 'LIVE_ORDER_PATH|/capi/v3/order' autopilot.py; then \
+	@if grep -qE 'LIVE_ORDER_PATH|/capi/v3/order' armm/autopilot.py; then \
 	  echo "FAIL: autopilot.py names the live order path"; exit 1; fi
 	@$(PY) -c "import ast,sys; \
-	tree=ast.parse(open('autopilot.py').read(),'autopilot.py'); \
+	tree=ast.parse(open('armm/autopilot.py').read(),'armm/autopilot.py'); \
 	lits=[k.value for n in ast.walk(tree) \
 	  if isinstance(n,ast.Call) and isinstance(n.func,ast.Name) and n.func.id=='WeexClient' \
 	  for k in n.keywords if k.arg=='demo']; \
@@ -79,19 +75,19 @@ demo-lock:
 	sys.exit('FAIL: demo= is not a hard-coded True') if bad else \
 	print('demo-lock: autopilot constructs '+str(len(lits))+' client(s), all demo=True (literal)')"
 	@$(PY) -c "import ast,sys; \
-	tree=ast.parse(open('autopilot.py').read(),'autopilot.py'); \
+	tree=ast.parse(open('armm/autopilot.py').read(),'armm/autopilot.py'); \
 	banned={'live','force','allow_live','real','production'}; \
 	bad=[n.name for n in ast.walk(tree) if isinstance(n,ast.FunctionDef) \
 	  and {a.arg for a in n.args.args+n.args.kwonlyargs} & banned]; \
 	sys.exit('FAIL: live/force parameter in '+', '.join(bad)) if bad else \
 	print('demo-lock: no function in autopilot.py accepts a live/force switch')"
-	@$(PY) demo_lock_check.py
+	@$(PY) -m armm.demo_lock_check
 
 clean:
-	@rm -rf __pycache__ && echo cleaned
+	@find . -name __pycache__ -type d -prune -exec rm -rf {} + && echo cleaned
 
 install-service:
 	@echo "Manual install (by design — the brief says the unit ships as a template):"
-	@echo "  sudo cp armm-bot.service /etc/systemd/system/armm-bot.service"
+	@echo "  sudo cp deploy/armm-bot.service /etc/systemd/system/armm-bot.service"
 	@echo "  sudo systemctl daemon-reload && sudo systemctl enable --now armm-bot"
 	@echo "  journalctl -u armm-bot -f     # or: tail -f ~/armm/bot.log"

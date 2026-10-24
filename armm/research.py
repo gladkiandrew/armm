@@ -22,14 +22,14 @@ the winner is inside the noise band of the field that is stated in the report
 rather than buried.
 
 Usage:
-  python3 research.py --symbol BTCUSDT --days 120
-  python3 research.py --symbol BTCUSDT --days 120 --out /tmp/report.md
+  python3 -m armm.research --symbol BTCUSDT --days 120
+  python3 -m armm.research --symbol BTCUSDT --days 120 --out /tmp/report.md
 """
 import argparse, datetime, itertools, math, os, statistics, sys
 
-import candles as candles_mod
-import logsetup
-import signals
+from . import candles as candles_mod
+from . import logsetup
+from . import signals
 
 log = logsetup.get("research")
 
@@ -369,7 +369,7 @@ def main(argv=None):
     p.add_argument("--refresh", action="store_true", help="ignore the kline cache")
     a = p.parse_args(argv)
 
-    from weex_client import WeexClient
+    from .weex_client import WeexClient
     client = WeexClient(demo=True)               # public klines only
 
     log.info("loading %d days of %s candles", a.days, a.symbol)

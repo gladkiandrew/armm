@@ -8,9 +8,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Offline unit tests (isolated home, no keys)
+      - name: make check — 276 offline tests + every safety invariant
         run: |
           export HOME="$RUNNER_TEMP/home" ARMM_HOME="$RUNNER_TEMP/home/armm"
           mkdir -p "$ARMM_HOME"
-          python -m py_compile *.py
-          python -m unittest -q test_armm test_signals test_autopilot test_starvation
+          # Throwaway random values so the runtime demo-lock proof can construct a
+          # client. Nothing here touches the network or places an order.
+          for k in WEEX_API_KEY WEEX_API_SECRET WEEX_API_PASSPHRASE; do
+            echo "$k=$(openssl rand -hex 16)"
+          done > "$ARMM_HOME/.env"
+          make check

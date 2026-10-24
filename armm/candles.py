@@ -21,10 +21,10 @@ changes under your feet and would flip a signal mid-hour.
 import csv, os, time
 from collections import namedtuple
 
-import config
-import logsetup
-from specs import market_symbol
-from weex_client import WeexError
+from . import config
+from . import logsetup
+from .specs import market_symbol
+from .weex_client import WeexError
 
 log = logsetup.get("candles")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ARMM v0.3 signal-layer tests — pure, offline. NO NETWORK, NO ORDERS.
 
-Run: make check   (or: python3 -m unittest -v test_signals)
+Run: make check   (or: python3 -m unittest -v tests.test_signals)
 """
 import logging
 import math
@@ -13,13 +13,13 @@ import unittest
 _TMP_HOME = tempfile.mkdtemp(prefix="armm-sigtest-")
 os.environ["ARMM_HOME"] = _TMP_HOME
 
-import advisor
-import candles
-import config
-import indicators as ind
-import research
-import signals
-import store as store_mod
+from armm import advisor
+from armm import candles
+from armm import config
+from armm import indicators as ind
+from armm import research
+from armm import signals
+from armm import store as store_mod
 
 _armm_log = logging.getLogger("armm")
 _armm_log.handlers.clear()
@@ -597,7 +597,7 @@ class FakeNotifier:
 
 class TestEdgeTriggeredAlerts(unittest.TestCase):
     def setUp(self):
-        import manager
+        from armm import manager
         self.manager_mod = manager
         self.store = store_mod.Store(":memory:")
         self.notify = FakeNotifier()
@@ -759,9 +759,9 @@ class TestNoOrderPathInSignalLayer(unittest.TestCase):
         over the word 'place_order' appearing in a docstring that promises the
         opposite."""
         import ast
-        here = os.path.dirname(os.path.abspath(__file__))
+        src = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "armm")
         for name in self.SIGNAL_MODULES:
-            with open(os.path.join(here, name)) as f:
+            with open(os.path.join(src, name)) as f:
                 tree = ast.parse(f.read(), filename=name)
             for node in ast.walk(tree):
                 if not isinstance(node, ast.Call):
@@ -775,9 +775,9 @@ class TestNoOrderPathInSignalLayer(unittest.TestCase):
     def test_signal_modules_hold_no_order_endpoint_literal(self):
         """No string constant naming an order endpoint, docstrings excluded."""
         import ast
-        here = os.path.dirname(os.path.abspath(__file__))
+        src = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "armm")
         for name in self.SIGNAL_MODULES:
-            with open(os.path.join(here, name)) as f:
+            with open(os.path.join(src, name)) as f:
                 tree = ast.parse(f.read(), filename=name)
             docstrings = set()
             for node in ast.walk(tree):
@@ -796,13 +796,13 @@ class TestNoOrderPathInSignalLayer(unittest.TestCase):
                                      f"{name}:{node.lineno} embeds an order endpoint")
 
     def test_live_order_path_constant_is_unchanged(self):
-        import weex_client
+        from armm import weex_client
         self.assertEqual(weex_client.LIVE_ORDER_PATH, "/capi/v3/order")
         self.assertEqual(weex_client.DEMO_ORDER_PATH, "/capi/v3/sim/order")
 
     def test_research_declares_itself_offline(self):
-        here = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(here, "research.py")) as f:
+        src = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "armm")
+        with open(os.path.join(src, "research.py")) as f:
             src = f.read()
         self.assertIn("OFFLINE", src)
 

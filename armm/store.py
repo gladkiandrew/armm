@@ -8,8 +8,8 @@ the same deterministic client id, the insert fails, and nothing is placed twice.
 """
 import json, os, sqlite3, threading, time
 
-import config
-import logsetup
+from . import config
+from . import logsetup
 
 log = logsetup.get("store")
 

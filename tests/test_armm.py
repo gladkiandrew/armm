@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ARMM unit tests — pure functions only. NO NETWORK, NO ORDERS.
 
-Run: make check   (or: python3 -m unittest -v test_armm)
+Run: make check   (or: python3 -m unittest -v tests.test_armm)
 """
 import logging
 import os
@@ -13,13 +13,13 @@ import unittest
 _TMP_HOME = tempfile.mkdtemp(prefix="armm-test-")
 os.environ["ARMM_HOME"] = _TMP_HOME
 
-import config
-import guards
-import ladder
-import manager
-import specs
-import store as store_mod
-import tg
+from armm import config
+from armm import guards
+from armm import ladder
+from armm import manager
+from armm import specs
+from armm import store as store_mod
+from armm import tg
 
 # These tests exercise manager/store paths that log. Detach the handlers the
 # imports installed so a test run stays readable and never writes to ~/armm/bot.log.
@@ -415,7 +415,7 @@ class TestRoutingIsDemoByDefault(unittest.TestCase):
     """Invariant 1: demo unless --live. Checked without constructing a client."""
 
     def test_paths_are_distinct_and_sim_is_the_default_branch(self):
-        import weex_client
+        from armm import weex_client
         self.assertEqual(weex_client.DEMO_ORDER_PATH, "/capi/v3/sim/order")
         self.assertEqual(weex_client.LIVE_ORDER_PATH, "/capi/v3/order")
         import inspect
@@ -495,14 +495,14 @@ class TestRestartIdempotency(unittest.TestCase):
         self.assertEqual(c.placed, [self._tid(2), self._tid(3)])
 
     def test_tranche_ids_carry_the_position_origin(self):
-        import origin as origin_mod
+        from armm import origin as origin_mod
         self.assertTrue(self._tid(2).startswith("armm-cli-"), self._tid(2))
         self.assertEqual(origin_mod.parse(self._tid(2)), "cli")
 
     def test_a_pre_v04_tranche_row_blocks_a_duplicate_under_the_new_id(self):
         """Upgrading v0.3 -> v0.4 changed tranche ids. A position that already
         has rows under the OLD id must not have its ladder placed again."""
-        import origin as origin_mod
+        from armm import origin as origin_mod
         for i in (2, 3):
             self.store.add_order(self.pid, "TP",
                                  origin_mod.legacy_tranche_id(self.pid, i),

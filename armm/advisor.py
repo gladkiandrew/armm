@@ -12,9 +12,9 @@ he wanted the bot to say so before the order goes in.
 """
 from dataclasses import dataclass, field
 
-import guards
-import logsetup
-import signals
+from . import guards
+from . import logsetup
+from . import signals
 
 log = logsetup.get("advisor")
 

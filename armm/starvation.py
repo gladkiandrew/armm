@@ -28,7 +28,7 @@ rather than inventing a cause it cannot support.
 import json
 import time
 
-import store as store_mod
+from . import store as store_mod
 
 # What run_symbol() returns, bucketed by what it means for health.
 BLOCKED = "blocked"

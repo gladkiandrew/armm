@@ -33,15 +33,15 @@ objection means no trade, full stop.
 import json
 import time
 
-import advisor as advisor_mod
-import guards
-import ladder
-import logsetup
-import origin as origin_mod
-import signals
-import starvation as starvation_mod
-import store as store_mod
-from weex_client import WeexClient, WeexError, DEMO_ORDER_PATH
+from . import advisor as advisor_mod
+from . import guards
+from . import ladder
+from . import logsetup
+from . import origin as origin_mod
+from . import signals
+from . import starvation as starvation_mod
+from . import store as store_mod
+from .weex_client import WeexClient, WeexError, DEMO_ORDER_PATH
 
 log = logsetup.get("autopilot")
 

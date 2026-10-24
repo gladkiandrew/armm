@@ -13,19 +13,19 @@ import unittest
 _TMP_HOME = tempfile.mkdtemp(prefix="armm-autotest-")
 os.environ.setdefault("ARMM_HOME", _TMP_HOME)
 
-import advisor
-import autopilot
-import config
-import guards
-import manager
-import origin as origin_mod
-import scoreboard
-import signals
-import starvation
-import store as store_mod
-import weex_client
+from armm import advisor
+from armm import autopilot
+from armm import config
+from armm import guards
+from armm import manager
+from armm import origin as origin_mod
+from armm import scoreboard
+from armm import signals
+from armm import starvation
+from armm import store as store_mod
+from armm import weex_client
 
-import ladder as _ladder
+from armm import ladder as _ladder
 _ladder._pause = lambda seconds: None          # no real waiting in tests
 
 _armm_log = logging.getLogger("armm")
@@ -37,7 +37,7 @@ _REAL_HOME = os.path.expanduser("~/armm")
 assert config.ARMM_HOME != _REAL_HOME, "tests must not run against the real ~/armm"
 assert config.ARMM_HOME.startswith(tempfile.gettempdir())
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "armm")
 
 
 # =====================================================================
@@ -101,13 +101,13 @@ class TestDemoLock(unittest.TestCase):
     """AT1: autopilot cannot reach the live order path — structurally."""
 
     def test_autopilot_source_never_names_the_live_order_path(self):
-        with open(os.path.join(HERE, "autopilot.py")) as f:
+        with open(os.path.join(SRC, "autopilot.py")) as f:
             src = f.read()
         self.assertNotIn("LIVE_ORDER_PATH", src)
         self.assertNotIn("/capi/v3/order", src)
 
     def test_autopilot_never_imports_the_live_path_constant(self):
-        with open(os.path.join(HERE, "autopilot.py")) as f:
+        with open(os.path.join(SRC, "autopilot.py")) as f:
             tree = ast.parse(f.read(), "autopilot.py")
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
@@ -117,7 +117,7 @@ class TestDemoLock(unittest.TestCase):
     def test_autopilot_constructs_its_client_with_a_literal_true(self):
         """The demo flag must be written at the call site, not read from config —
         otherwise 'demo' becomes something a flag could flip."""
-        with open(os.path.join(HERE, "autopilot.py")) as f:
+        with open(os.path.join(SRC, "autopilot.py")) as f:
             tree = ast.parse(f.read(), "autopilot.py")
         literals = []
         for node in ast.walk(tree):
@@ -165,7 +165,7 @@ class TestDemoLock(unittest.TestCase):
             autopilot.assert_demo(auto.client, "post-construction")
 
     def test_autopilot_has_no_live_or_force_parameter(self):
-        with open(os.path.join(HERE, "autopilot.py")) as f:
+        with open(os.path.join(SRC, "autopilot.py")) as f:
             tree = ast.parse(f.read(), "autopilot.py")
         banned = {"live", "force", "allow_live", "real", "production"}
         for node in ast.walk(tree):
@@ -379,7 +379,7 @@ class TestAutopilotHasNoOverride(AutopilotHarness):
 
     def test_autopilot_exposes_no_way_to_proceed_past_an_objection(self):
         """There is deliberately no 'override' parameter anywhere in the module."""
-        with open(os.path.join(HERE, "autopilot.py")) as f:
+        with open(os.path.join(SRC, "autopilot.py")) as f:
             src = f.read()
         for word in ("override=", "ignore_advisor", "skip_advisor", "confirm_anyway"):
             self.assertNotIn(word, src)
@@ -676,7 +676,7 @@ class TestLiquidationCheck(unittest.TestCase):
 
 class TestRegimeVeto(unittest.TestCase):
     def _c4h(self, closes):
-        import test_signals
+        from tests import test_signals
         return test_signals.mk(closes)
 
     def test_a_falling_series_is_regime_down(self):
@@ -733,7 +733,7 @@ class TestRegimeVeto(unittest.TestCase):
 
 def _thirty_min_agreeing_with_setup_a():
     """A 30m series oversold enough to confirm Setup A."""
-    import test_signals
+    from tests import test_signals
     return test_signals.mk(test_signals.series_with_rsi_near(30.0),
                            step=1_800_000)
 
@@ -747,7 +747,7 @@ class TestThirtyMinuteFrame(unittest.TestCase):
         self.assertLess(rsi30, 40.0)
 
     def test_setup_a_is_vetoed_when_the_30m_is_not_oversold(self):
-        import test_signals
+        from tests import test_signals
         snap = confirming_snapshot("A")
         c30m = test_signals.mk(test_signals.series_with_rsi_near(60.0), step=1_800_000)
         ok, detail, _ = signals.assess_30m(snap, c30m, signals.SetupBParams())
@@ -763,7 +763,7 @@ class TestThirtyMinuteFrame(unittest.TestCase):
         self.assertFalse(snap.setup_b, "unknown must not permit an entry")
 
     def test_setup_b_is_vetoed_by_an_extended_30m(self):
-        import test_signals
+        from tests import test_signals
         snap = confirming_snapshot("B")
         c30m = test_signals.mk(test_signals.series_with_rsi_near(85.0), step=1_800_000)
         ok, detail, _ = signals.assess_30m(snap, c30m, signals.SetupBParams())

@@ -20,9 +20,9 @@ Honesty rules baked in:
 import statistics
 import time
 
-import origin as origin_mod
-import starvation
-import store as store_mod
+from . import origin as origin_mod
+from . import starvation
+from . import store as store_mod
 
 MIN_TRADES_FOR_CONFIDENCE = 20
 

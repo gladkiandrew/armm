@@ -21,9 +21,9 @@ import unittest
 _TMP_HOME = tempfile.mkdtemp(prefix="armm-starvtest-")
 os.environ.setdefault("ARMM_HOME", _TMP_HOME)
 
-import config
-import starvation
-import store as store_mod
+from armm import config
+from armm import starvation
+from armm import store as store_mod
 
 _armm_log = logging.getLogger("armm")
 _armm_log.handlers.clear()
@@ -262,7 +262,7 @@ class TestWeeklyDigest(TrackerHarness):
                 now=1000.0 + i * 300.0)
 
     def test_the_digest_leads_with_the_block_when_starved(self):
-        import scoreboard
+        from armm import scoreboard
         self._starve()
         text = scoreboard.weekly_digest(self.store, now=200_000.0)
         self.assertIn("BLOCKED", text.upper())
@@ -270,7 +270,7 @@ class TestWeeklyDigest(TrackerHarness):
 
     def test_the_block_appears_before_the_trade_stats(self):
         """'no trades' below an unexplained header is how a month was lost."""
-        import scoreboard
+        from armm import scoreboard
         self._starve()
         text = scoreboard.weekly_digest(self.store, now=200_000.0)
         # "strategy as coded" is the stats label; plain "AUTO" would match
@@ -279,12 +279,12 @@ class TestWeeklyDigest(TrackerHarness):
                         text.index("strategy as coded"))
 
     def test_a_healthy_week_adds_no_block_section(self):
-        import scoreboard
+        from armm import scoreboard
         text = scoreboard.weekly_digest(self.store, now=200_000.0)
         self.assertNotIn("BLOCKED", text.upper())
 
     def test_every_starved_symbol_is_named(self):
-        import scoreboard
+        from armm import scoreboard
         self._starve(symbol="BTCUSDT")
         self._starve(symbol="SOLUSDT")
         text = scoreboard.weekly_digest(self.store, now=200_000.0)

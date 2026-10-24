@@ -11,9 +11,9 @@ A timeout NEVER authorizes an automatic retry (WEEX guidance): _request raises.
 import base64, hashlib, hmac, json, os, threading, time
 import urllib.error, urllib.parse, urllib.request
 
-import config
-import logsetup
-from specs import market_symbol
+from . import config
+from . import logsetup
+from .specs import market_symbol
 
 log = logsetup.get("weex")
 

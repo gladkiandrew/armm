@@ -6,9 +6,9 @@ DEMO MODE by default. Every entry path in the bot funnels through build_plan()
 other way to reach the order endpoint.
 
 Usage:
-  python3 ladder.py BTCUSDT LONG --offset 40 --stop-pct 1 \
+  python3 -m armm.ladder BTCUSDT LONG --offset 40 --stop-pct 1 \
       --targets-pct 0.5,1,1.5 --notional 500
-  python3 ladder.py BTCUSDT LONG --entry 108500 --stop 107400 \
+  python3 -m armm.ladder BTCUSDT LONG --entry 108500 --stop 107400 \
       --targets 109000,109550,110100 --notional 2000 [--live]
 
 Entry modes are mutually exclusive: --entry (absolute) | --offset (points off
@@ -22,12 +22,12 @@ ladder is the manager's job and is validated live-tiny later.
 """
 import argparse, json, sys, time
 
-import guards
-import logsetup
-import origin as origin_mod
-import specs
-import store as store_mod
-from weex_client import WeexClient, WeexError
+from . import guards
+from . import logsetup
+from . import origin as origin_mod
+from . import specs
+from . import store as store_mod
+from .weex_client import WeexClient, WeexError
 
 log = logsetup.get("ladder")
 
@@ -499,7 +499,7 @@ def main(argv=None):
     # Advisor: never blocks, but a contradicted entry costs an extra keystroke.
     advice = None
     if not a.no_advisor:
-        import advisor
+        from . import advisor
         anchor = store_mod.default().get_anchor(a.symbol.upper())
         advice = advisor.review(a.symbol.upper(), a.side.upper(),
                                 entry_price=plan.entry, client=client,

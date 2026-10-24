@@ -11,8 +11,8 @@ Pure rounding helpers live here too — they are the unit-tested core of sizing.
 import json, os, time
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP, ROUND_UP
 
-import config
-import logsetup
+from . import config
+from . import logsetup
 
 log = logsetup.get("specs")
 
@@ -179,7 +179,7 @@ def refresh_all(client, symbols):
 
 if __name__ == "__main__":
     import sys
-    from weex_client import WeexClient
+    from .weex_client import WeexClient
     syms = sys.argv[1:] or ["BTCUSDT"]
     c = WeexClient(demo=True)
     for s in syms:

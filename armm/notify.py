@@ -7,8 +7,8 @@ Every alert is logged whether or not Telegram is configured.
 import json, queue, threading, time
 import urllib.error, urllib.parse, urllib.request
 
-import config
-import logsetup
+from . import config
+from . import logsetup
 
 log = logsetup.get("notify")
 

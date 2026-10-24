@@ -22,9 +22,9 @@ the harness and the live cockpit evaluate through identical code.
 """
 from dataclasses import dataclass, field, asdict
 
-import candles as candles_mod
-import indicators as ind
-import logsetup
+from . import candles as candles_mod
+from . import indicators as ind
+from . import logsetup
 
 log = logsetup.get("signals")
 
@@ -742,7 +742,7 @@ def evaluate(symbol, anchor_ts=None, client=None, k=DEFAULT_K, params=None,
     filter), its 30m (the v0.4 justification frame), and BTC's 4H (the market
     regime every symbol is judged against).
     """
-    from weex_client import WeexClient, WeexError
+    from .weex_client import WeexClient, WeexError
     client = client or WeexClient(demo=True)
     try:
         c1h = candles_mod.recent(client, symbol, "1h", limit=bars_1h)

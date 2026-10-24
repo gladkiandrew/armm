@@ -7,8 +7,8 @@ that is live in any respect must be refused, not corrected.
 """
 import sys
 
-import autopilot
-import weex_client
+from . import autopilot
+from . import weex_client
 
 
 def _client(**over):

@@ -1,6 +1,6 @@
 # ARMM position manager + Telegram cockpit.
 # Template — installed MANUALLY (see `make install-service`), never automatically.
-#   sudo cp armm-bot.service /etc/systemd/system/armm-bot.service
+#   sudo cp deploy/armm-bot.service /etc/systemd/system/armm-bot.service
 #   sudo systemctl daemon-reload && sudo systemctl enable --now armm-bot
 #
 # DEMO by default: there is no --live in ExecStart, and adding one is a
@@ -18,7 +18,7 @@ Group=ubuntu
 WorkingDirectory=/opt/armm
 EnvironmentFile=/home/ubuntu/armm/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/usr/bin/python3 /opt/armm/manager.py --symbols BTCUSDT --telegram
+ExecStart=/usr/bin/python3 -m armm.manager --symbols BTCUSDT --telegram
 Restart=always
 RestartSec=10
 TimeoutStopSec=30

@@ -8,7 +8,7 @@ flag, and nothing here consults an LLM.
 """
 import copy, datetime, json, os, threading, time
 
-import config
+from . import config
 
 STATE_PATH = config.GUARD_STATE_PATH
 

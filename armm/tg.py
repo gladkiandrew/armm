@@ -15,19 +15,19 @@ import urllib.error
 
 import datetime
 
-import advisor as advisor_mod
-import autopilot as autopilot_mod
-import candles as candles_mod
-import config
-import guards
-import ladder
-import logsetup
-import notify as notify_mod
-import origin as origin_mod
-import signals
-import specs
-import store as store_mod
-from weex_client import WeexClient, WeexError
+from . import advisor as advisor_mod
+from . import autopilot as autopilot_mod
+from . import candles as candles_mod
+from . import config
+from . import guards
+from . import ladder
+from . import logsetup
+from . import notify as notify_mod
+from . import origin as origin_mod
+from . import signals
+from . import specs
+from . import store as store_mod
+from .weex_client import WeexClient, WeexError
 
 log = logsetup.get("tg")
 
@@ -565,7 +565,7 @@ class Cockpit:
         return self.reply(chat_id, f"unknown /auto subcommand {sub!r}")
 
     def cmd_score(self, chat_id, args):
-        import scoreboard
+        from . import scoreboard
         self.reply(chat_id, scoreboard.render(self.store))
 
     def cmd_ladder(self, chat_id, args):

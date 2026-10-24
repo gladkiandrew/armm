@@ -17,18 +17,18 @@ entry. The full ladder is validated live-tiny later, exercising the same engine.
 """
 import argparse, json, signal, sys, threading, time
 
-import autopilot as autopilot_mod
-import candles as candles_mod
-import config
-import guards
-import ladder
-import logsetup
-import notify as notify_mod
-import origin as origin_mod
-import signals
-import specs
-import store as store_mod
-from weex_client import WeexClient, WeexError
+from . import autopilot as autopilot_mod
+from . import candles as candles_mod
+from . import config
+from . import guards
+from . import ladder
+from . import logsetup
+from . import notify as notify_mod
+from . import origin as origin_mod
+from . import signals
+from . import specs
+from . import store as store_mod
+from .weex_client import WeexClient, WeexError
 
 log = logsetup.get("manager")
 
@@ -260,7 +260,7 @@ class Manager:
         window cannot produce a second one.
         """
         import datetime
-        import scoreboard
+        from . import scoreboard
         stamp = datetime.datetime.fromtimestamp(now or time.time())
         if stamp.weekday() != WEEKLY_DIGEST_WEEKDAY or stamp.hour < WEEKLY_DIGEST_HOUR:
             return False
@@ -665,7 +665,7 @@ def main(argv=None):
     signal.signal(signal.SIGINT, m.stop)
 
     if a.telegram:
-        import tg
+        from . import tg
         cockpit = tg.Cockpit(demo=not a.live, notifier=m.notify, store=m.store,
                              manager=m, allow_live=a.allow_live_orders)
         threading.Thread(target=cockpit.run, name="cockpit", daemon=True).start()

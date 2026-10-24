@@ -5,7 +5,7 @@ Every logger built here carries a redaction filter so an API key or bot token
 can never land in bot.log (or in a terminal transcript).
 """
 import logging, logging.handlers, os, sys
-import config
+from . import config
 
 MAX_BYTES = 5_000_000
 BACKUPS = 5
