@@ -12,8 +12,10 @@ autopilot trades the same rules on simulated money, so the strategy-as-coded can
 be measured against my discretionary record.
 
 **No LLM is anywhere near the order path.** Signals, sizing, guards and execution
-are deterministic Python. I build with AI coding agents (Claude Code); the
-design, the rules and every acceptance test are mine.
+are deterministic Python, and the bot calls no model of any kind, so there is no
+model vendor or API key to configure. I build with AI coding agents (Claude Code on
+a Claude Max subscription); the design, the rules and every acceptance test are
+mine.
 
 | | |
 |---|---|
