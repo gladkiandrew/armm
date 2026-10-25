@@ -79,7 +79,8 @@ def secret_fragments():
     """Values that must never reach a log line or a transcript."""
     env = load_env()
     out = []
-    for k in ("WEEX_API_KEY", "WEEX_API_SECRET", "WEEX_API_PASSPHRASE", "TELEGRAM_BOT_TOKEN"):
+    for k in ("WEEX_API_KEY", "WEEX_API_SECRET", "WEEX_API_PASSPHRASE", "TELEGRAM_BOT_TOKEN",
+              "ANTHROPIC_API_KEY"):
         v = env.get(k) or os.environ.get(k)
         if v and len(v) >= 8:
             out.append(v)

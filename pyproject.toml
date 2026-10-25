@@ -5,3 +5,7 @@ description = "Risk-first execution engine for crypto futures: deterministic gua
 requires-python = ">=3.10"
 authors = [{ name = "Andrew Gladki" }]
 license = { text = "MIT" }
+
+[project.optional-dependencies]
+# Only for Claude's plain-English read on /check. The bot never needs it.
+explain = ["anthropic"]

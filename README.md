@@ -12,18 +12,19 @@ autopilot trades the same rules on simulated money, so the strategy-as-coded can
 be measured against my discretionary record.
 
 **No LLM is anywhere near the order path.** Signals, sizing, guards and execution
-are deterministic Python, and the bot calls no model of any kind, so there is no
-model vendor or API key to configure. I build with AI coding agents (Claude Code on
-a Claude Max subscription); the design, the rules and every acceptance test are
-mine.
+are deterministic Python. Claude has exactly one job: after `/check` has computed
+its verdicts, it explains them in plain English (optional, with your Anthropic API
+key). It never sees the order path, and `make check` proves that on every push. I
+build with AI coding agents (Claude Code on a Claude Max subscription); the design,
+the rules and every acceptance test are mine.
 
 | | |
 |---|---|
-| Language | Python 3.12, standard library only |
+| Language | Python 3.12, standard library only (the optional `/check` explainer adds `anthropic`) |
 | Venue | WEEX USDT-margined perpetuals (native REST client) |
 | State | SQLite state machine |
 | Interface | CLI + Telegram cockpit (chat-id lockdown) |
-| Tests | 281 offline unit tests, no network, no keys |
+| Tests | 289 offline unit tests, no network, no keys |
 | Safety | invariants proven by `make check` on every push (AST + runtime) |
 | Runs on | a self-managed Linux VPS under systemd |
 
@@ -65,6 +66,7 @@ the AST on every push. Everything in the strategy layer is pure computation.
 - **[`armm/autopilot.py`](armm/autopilot.py)**: demo-only *by construction*, not by setting. It never imports the live order path, hard-codes `demo=True` at every call site, and re-checks routing before every order. `make demo-lock` proves all three.
 - **[`armm/research.py`](armm/research.py)**: the parameter sweep, anchored to confirmed swing lows to avoid look-ahead. It found that the best parameter sets were statistically indistinguishable, so the report says "keep the defaults" instead of presenting a fake best set.
 - **[`armm/starvation.py`](armm/starvation.py)**: tells "the market offered nothing" apart from "a setup fired and something blocked it." Built after autopilot sat for a month refusing 335 valid signals with no alarm ([story below](#starvation-detection-v05)).
+- **[`armm/explain.py`](armm/explain.py)**: where Claude is allowed in, and how it's kept out of everything else. It sees only the finished `/check` readout, a reply that states any number not already in that readout is dropped, and it fails quiet so the cockpit never waits on it.
 - **[`docs/BUILD_LOG.md`](docs/BUILD_LOG.md)**: what broke, why, and the fix, release by release. The real engineering record.
 
 ## Safety invariants (`make check`, enforced in CI)
@@ -72,9 +74,10 @@ the AST on every push. Everything in the strategy layer is pure computation.
 | Check | What it proves |
 |---|---|
 | `self-check` | every prerequisite of `check` has a real recipe, so a green run can't be vacuous |
-| `compile` + `test` | every module compiles; 281 offline unit tests pass in an isolated temp home |
+| `compile` + `test` | every module compiles; 289 offline unit tests pass in an isolated temp home |
 | `secrets` | no env file is tracked and no credential value appears anywhere in the tree |
 | `no-new-order-paths` | from the AST: only `ladder.py` and `manager.py` call an order function; the live endpoint constant is unchanged |
+| `no-llm-in-decisions` | from the AST: none of the 16 modules that compute, size, guard, place or record a trade imports the explainer or the model SDK, and the explainer imports nothing that trades |
 | `demo-lock` | autopilot never names the live path, builds clients only with a literal `demo=True`, takes no live/force parameter, and at runtime refuses six kinds of live-ish client |
 
 ## Quickstart (offline, no keys)
@@ -139,9 +142,10 @@ armm/
   specs.py          per-symbol contract specs (24h cache) + all rounding math
   config.py         paths + the only reader/writer of ~/armm/.env
   logsetup.py       rotating ~/armm/bot.log with secret redaction
+  explain.py        optional: Claude explains a /check readout; never decides
   demo_lock_check.py  runtime half of acceptance test 1
   demo.py           offline demo: risk gate + synthetic-data backtest, no keys
-tests/              281 offline unit tests (test_armm, test_signals, test_autopilot, test_starvation, test_demo)
+tests/              289 offline unit tests (test_armm, test_signals, test_autopilot, test_starvation, test_demo, test_explain)
 deploy/             armm-bot.service — hardened systemd template, installed manually
 docs/BUILD_LOG.md   lessons, release by release
 ```
@@ -178,6 +182,7 @@ additionally requires the process to have been started with `--allow-live-orders
 /last     recent order history
 
 /check SYMBOL     price, aVWAP ± band, RSI, MACD, 4H trend, setup verdicts
+                  → then Claude's plain-English read, as a second message (optional)
 /anchor SYMBOL <YYYY-MM-DDTHH:MM | auto>   set the aVWAP anchor
 /watch SYMBOL     alert once when a setup confirms   ·   /unwatch SYMBOL
 /watching         list watched symbols and their anchors
@@ -194,6 +199,13 @@ mean "ON and structurally unable to trade".
 `stop=` and `targets=` are **percentages**; use `stopprice=` / `targetprices=` for
 absolute values. The plan and its routing line are sent before anything is placed.
 
+**Claude's read on `/check` (optional).** Add `ANTHROPIC_API_KEY=…` to `~/armm/.env`
+and `pip install anthropic`. The deterministic readout arrives first, unchanged;
+Claude's explanation follows as its own message, so a slow model can never delay a
+`/halt`. Without the key or the package, `/check` is exactly what it was. From the
+shell: `python3 -m armm.explain BTCUSDT`. `ARMM_EXPLAIN_MODEL` overrides the default
+model.
+
 **First run:** if `TELEGRAM_CHAT_ID` is blank, send `/start` from your Telegram
 account — that chat is written into `~/armm/.env` and every other chat id is
 refused and logged from then on.
@@ -201,7 +213,7 @@ refused and logged from then on.
 ## Ops
 
 ```bash
-make check                # self-check, compile, 281 tests, secret scan, order-path + demo-lock proofs
+make check                # self-check, compile, 289 tests, secret scan, order-path, no-LLM-in-decisions + demo-lock proofs
 make install-service      # prints the manual systemd install steps
 tail -f ~/armm/bot.log    # rotating, 5MB x 5
 ```

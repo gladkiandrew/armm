@@ -19,6 +19,7 @@ from . import advisor as advisor_mod
 from . import autopilot as autopilot_mod
 from . import candles as candles_mod
 from . import config
+from . import explain as explain_mod
 from . import guards
 from . import ladder
 from . import logsetup
@@ -49,6 +50,7 @@ HELP = """ARMM cockpit
 
 Signals (advisory only — v0.3 places no orders on its own):
 /check SYMBOL — price, aVWAP ± band, RSI, MACD, 4H trend, setup verdicts
+                (+ Claude's plain-English read, if ANTHROPIC_API_KEY is set)
 /anchor SYMBOL <YYYY-MM-DDTHH:MM | auto> — set the aVWAP anchor ('auto' finds
     the most recent significant swing low)
 /watch SYMBOL — alert once when a setup confirms · /unwatch SYMBOL
@@ -432,6 +434,16 @@ class Cockpit:
         else:
             text += "\nno anchor set — using the series start. /anchor SYMBOL auto"
         self.reply(chat_id, text)
+        if not snap.error:
+            # Claude's read follows as its own message, off this thread: the cockpit
+            # handles one command at a time, and a slow model must never delay a /halt.
+            threading.Thread(target=self._explain_check, args=(chat_id, text),
+                             name="explain", daemon=True).start()
+
+    def _explain_check(self, chat_id, text):
+        read = explain_mod.explain(text)
+        if read:
+            self.reply(chat_id, f"{explain_mod.LABEL}\n{read}")
 
     def cmd_anchor(self, chat_id, args):
         if not args:
